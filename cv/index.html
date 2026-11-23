@@ -243,6 +243,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
             <div class="field"><label>Email</label><input data-p="email" type="email" placeholder="prenom.nom@email.com"></div>
             <div class="field"><label>Téléphone</label><input data-p="phone" placeholder="+226 70 00 00 00"></div>
             <div class="field"><label>Ville, pays</label><input data-p="city" placeholder="Ouagadougou, Burkina Faso"></div>
+            <div class="field"><label>Date de naissance</label><input data-p="birthdate" type="date"></div>
             <div class="field"><label>LinkedIn / site web</label><input data-p="link" placeholder="linkedin.com/in/votre-nom"></div>
             <div class="field"><label>Autre lien (facultatif)</label><input data-p="link2"></div>
             <div class="field"><label>Info complémentaire (facultatif)</label><input data-p="extra" placeholder="Ex. Permis B · Disponible immédiatement"></div>
@@ -403,9 +404,9 @@ const COLORS=['#1f4e79','#0f766e','#7c2d12','#6d28d9','#be123c','#111827'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const LKEY='cv_builder_saved',DKEY='cv_builder_draft';
 
-const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signatureOn:true,template:'moderne',color:'#1f4e79',font:'auto'});
+const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',birthdate:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signatureOn:true,template:'moderne',color:'#1f4e79',font:'auto'});
 const SAMPLE=()=>({...EMPTY(),
- personal:{name:'Awa Traoré',title:'Comptable confirmée',email:'awa.traore@exemple.com',phone:'+226 70 00 00 00',city:'Ouagadougou, Burkina Faso',link:'linkedin.com/in/awa-traore',link2:'',extra:'Permis B'},
+ personal:{name:'Awa Traoré',title:'Comptable confirmée',email:'awa.traore@exemple.com',phone:'+226 70 00 00 00',city:'Ouagadougou, Burkina Faso',birthdate:'1992-08-15',link:'linkedin.com/in/awa-traore',link2:'',extra:'Permis B'},
  summary:'Comptable avec 6 ans d’expérience en comptabilité générale et en clôture mensuelle dans des structures de 50 à 300 agents. Rigoureuse et à l’aise avec les outils ERP, j’ai réduit les délais de clôture de 20 % et fiabilisé les rapprochements bancaires.',
  experiences:[
   {title:'Comptable principale',company:'Société Exemple SA',place:'Ouagadougou',start:'2022-03',end:'',current:true,desc:'Tenue de la comptabilité générale et suivi de 3 comptes clients stratégiques\nRéduction du délai de clôture mensuelle de 10 à 8 jours ouvrés\nProduction des états financiers et des déclarations fiscales\nFormation de 2 assistants comptables aux nouvelles procédures'},
@@ -525,6 +526,14 @@ function bullets(t){
 function dots(n){n=+n;return n?'●'.repeat(n)+'○'.repeat(5-n):''}
 function mix(h,t){const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;const m=x=>Math.round(x+(255-x)*t);return '#'+[m(r),m(g),m(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function isLight(h){const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)/255>0.65}
+function formatBirthdate(v){
+ if(!v)return '';
+ const parts=String(v).split('-');
+ if(parts.length!==3)return '';
+ const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+ if(Number.isNaN(d.getTime()))return '';
+ return `Date de naissance : ${new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(d)}`;
+}
 
 /* ---------- Modèles ---------- */
 const TEMPLATES={
@@ -611,9 +620,9 @@ function css(d,mode){
   rule:`font-size:11.5pt;font-variant:small-caps;letter-spacing:1px;color:#111;border-bottom:1px solid #888;padding-bottom:2px;margin:${m}`
  }[sp.h2];
  const page=mode==='word'
-  ?`@page Section1{size:21cm 29.7cm;margin:${bleed?'0':'1.4cm'}}div.Section1{page:Section1}`
-  :`@page{size:A4;margin:${bleed?'0':'14mm'}}`;
- const pad=mode==='preview'&&!bleed?'padding:14mm;':'';
+  ?`@page Section1{size:21cm 29.7cm;margin:1.4cm;mso-header-margin:0;mso-footer-margin:0;}div.Section1{page:Section1;mso-header:none;mso-footer:none;}`
+  :`@page{size:A4;margin:${mode==='print'?'0':(bleed?'0':'14mm')}}`;
+ const pad=(mode==='preview'||mode==='print')&&!bleed?'padding:14mm;':'';
  const jtc=((sp.head==='left'&&sp.light)||sp.head==='bar'||sp.head==='center')?c:'#444';
  const phb=sp.sideStyle==='light'?mix(c,.5):sTx;
  return `${page}
@@ -680,7 +689,8 @@ function signatureHtml(d){
 function buildInner(d){
  const sp=TEMPLATES[d.template]||TEMPLATES.moderne;
  const p=d.personal;
- const contacts=[p.email,p.phone,p.city,p.link,p.link2,p.extra].filter(Boolean);
+ const birthdate=formatBirthdate(p.birthdate);
+ const contacts=[p.email,p.phone,p.city,birthdate,p.link,p.link2,p.extra].filter(Boolean);
  const exp=d.experiences.filter(x=>x.title||x.company).map(x=>itemHtml(sp,x.title,range(x.start,x.end,x.current),[x.company,x.place].filter(Boolean).map(esc).join(' · '),bullets(x.desc))).join('');
  const edu=d.education.filter(x=>x.degree||x.school).map(x=>itemHtml(sp,x.degree,range(x.start,x.end,false),[x.school,x.place].filter(Boolean).map(esc).join(' · '),x.desc?`<div class="dim">${esc(x.desc).replace(/\n/g,'<br>')}</div>`:'')).join('');
  const certs=d.certs.filter(x=>x.name).map(certItem).join('');
@@ -780,7 +790,7 @@ function exportPdf(){
  const win=window.open('','_blank');
  if(!win){status('Autorisez les fenêtres pop-up pour générer le PDF, puis choisissez « Enregistrer au format PDF » dans la fenêtre d’impression.','error');return}
  win.document.open();win.document.write(buildDoc(S,'print'));win.document.close();
- win.onload=()=>{win.focus();win.print()};
+ setTimeout(()=>{win.focus();win.print()},300);
  status('Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF » et désactivez les en-têtes/pieds de page.','ok');
 }
 function exportWord(){
