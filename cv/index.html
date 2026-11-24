@@ -72,6 +72,16 @@ input[type=color]{padding:2px;height:38px;width:60px}
 .modal{display:none;position:fixed;inset:0;background:#0b1e33a8;z-index:10;align-items:center;justify-content:center;padding:18px}
 .modal.show{display:flex}.modalbox{background:#fff;border-radius:14px;padding:22px;max-width:560px;width:100%;max-height:85vh;overflow:auto}
 .modalbox h3{margin:0 0 10px;color:var(--navy)}
+.toolgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.toolgrid button{min-height:44px}
+.qr-preview{display:grid;place-items:center;min-height:180px;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.qr-preview img{width:180px;height:180px;image-rendering:pixelated}
+.proof-field{margin:10px 0}
+.proof-field textarea{min-height:74px}
+.result-list{padding-left:20px}
+.result-list li{margin:3px 0}
+.score{font-size:20px;font-weight:800;color:var(--navy)}
+.cv-qr{width:82px;height:82px;object-fit:contain}
 .record{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:9px;margin:8px 0}
 .record small{display:block;color:var(--muted)}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
@@ -216,6 +226,20 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
   <div id="status" class="status" role="status"></div>
   <div class="layout">
     <div class="formcol">
+
+      <details class="sec">
+        <summary>Outils de candidature</summary>
+        <div class="secbody">
+          <div class="toolgrid">
+            <button type="button" class="secondary" id="atsBtn">Analyser une offre (ATS)</button>
+            <button type="button" class="secondary" id="letterBtn">Créer une lettre de motivation</button>
+            <button type="button" class="secondary" id="proofBtn">Relire et corriger le texte</button>
+            <button type="button" class="secondary" id="qrBtn">Ajouter un QR code portfolio</button>
+            <button type="button" class="secondary" id="englishBtn">Télécharger la copie anglaise</button>
+          </div>
+          <p class="hint">Les analyses et documents sont générés sur votre appareil. La copie anglaise traduit les rubriques, pas vos textes personnels.</p>
+        </div>
+      </details>
 
       <details class="sec" open>
         <summary>Modèle et apparence</summary>
@@ -362,6 +386,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
       <div class="fcard"><div class="ic">📤</div><h3>Export PDF et Word</h3><p>Téléchargez un PDF prêt à envoyer, ou un fichier Word à retoucher.</p></div>
       <div class="fcard"><div class="ic">🔒</div><h3>Vos données restent chez vous</h3><p>Les CV sont conservés dans votre navigateur, sur votre appareil. Rien n’est envoyé à un compte en ligne.</p></div>
       <div class="fcard"><div class="ic">🗂️</div><h3>Plusieurs CV</h3><p>Enregistrez une version par poste visé, puis exportez ou importez des sauvegardes.</p></div>
+      <div class="fcard"><div class="ic">🧰</div><h3>Outils de candidature</h3><p>Comparez votre CV à une offre, préparez une lettre, relisez vos textes et ajoutez un QR code de portfolio. Une copie anglaise modifiable traduit les rubriques, pas vos textes personnels.</p></div>
     </div>
   </section>
 
@@ -405,8 +430,61 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
   <div class="modalbox"><h3>Mes CV enregistrés</h3><div id="recordList"></div>
     <div style="margin-top:14px"><button class="danger" id="closeList">Fermer</button></div></div>
 </div>
+<div class="modal" id="atsModal" role="dialog" aria-modal="true" aria-labelledby="atsTitle">
+  <div class="modalbox">
+    <h3 id="atsTitle">Comparer mon CV à une offre</h3>
+    <div class="field"><label for="atsOffer">Collez le texte de l’offre d’emploi</label><textarea id="atsOffer" lang="fr" spellcheck="true" maxlength="30000" placeholder="Description du poste, missions et compétences recherchées…"></textarea></div>
+    <button type="button" class="primary" id="atsAnalyze">Analyser localement</button>
+    <div id="atsResults" role="status" aria-live="polite"></div>
+    <div style="margin-top:14px"><button type="button" class="danger" data-close="atsModal">Fermer</button></div>
+  </div>
+</div>
+<div class="modal" id="letterModal" role="dialog" aria-modal="true" aria-labelledby="letterTitle">
+  <div class="modalbox">
+    <h3 id="letterTitle">Créer une lettre de motivation</h3>
+    <div class="grid">
+      <div class="field"><label for="letterPosition">Poste visé</label><input id="letterPosition" spellcheck="true" lang="fr"></div>
+      <div class="field"><label for="letterCompany">Entreprise</label><input id="letterCompany" spellcheck="true" lang="fr"></div>
+    </div>
+    <div class="field"><label for="letterDescription">Éléments de l’offre à reprendre (facultatif)</label><textarea id="letterDescription" lang="fr" spellcheck="true" placeholder="Missions, qualités recherchées ou motivation particulière…"></textarea></div>
+    <button type="button" class="primary" id="letterGenerate">Générer le brouillon</button>
+    <div class="field" style="margin-top:10px"><label for="letterText">Brouillon modifiable</label><textarea id="letterText" lang="fr" spellcheck="true" style="min-height:230px"></textarea></div>
+    <div class="toolbar">
+      <button type="button" class="secondary" id="letterCopy">Copier</button>
+      <button type="button" class="success" id="letterDownload">Télécharger Word</button>
+      <button type="button" class="danger" data-close="letterModal">Fermer</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="proofModal" role="dialog" aria-modal="true" aria-labelledby="proofTitle">
+  <div class="modalbox">
+    <h3 id="proofTitle">Relire et corriger le texte</h3>
+    <p class="hint">Le correcteur orthographique dépend du navigateur. Les alertes locales signalent seulement les espaces ou répétitions évidentes; rien n’est envoyé en ligne.</p>
+    <div id="proofIssues" aria-live="polite"></div>
+    <div id="proofFields"></div>
+    <div class="toolbar">
+      <button type="button" class="primary" id="proofApply">Appliquer les modifications</button>
+      <button type="button" class="danger" data-close="proofModal">Fermer</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+  <div class="modalbox">
+    <h3 id="qrTitle">Ajouter un QR code de portfolio</h3>
+    <div class="field"><label for="qrUrl">Adresse publique (LinkedIn, portfolio ou site)</label><input type="url" id="qrUrl" maxlength="2048" placeholder="https://exemple.com" autocomplete="url"></div>
+    <button type="button" class="primary" id="qrGenerate">Générer le QR code</button>
+    <div class="qr-preview" id="qrPreview" aria-live="polite">Le QR code apparaîtra ici.</div>
+    <label class="chk"><input type="checkbox" id="qrOn"> Afficher le QR code sur le CV</label>
+    <div class="toolbar" style="margin-top:12px">
+      <button type="button" class="secondary" id="qrRemove">Retirer du CV</button>
+      <button type="button" class="danger" data-close="qrModal">Fermer</button>
+    </div>
+    <p class="hint">Le QR code est créé localement. Seule l’adresse encodée par le QR est visible aux personnes qui le scannent.</p>
+  </div>
+</div>
 <footer>Créateur de CV – les CV sont conservés dans le stockage local de ce navigateur. Pensez à télécharger une sauvegarde (.json).</footer>
 
+<script src="./qrcode-generator.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -414,8 +492,13 @@ const FONTS={sans:'Calibri,Arial,Helvetica,sans-serif',serif:'Georgia,"Times New
 const COLORS=['#1f4e79','#0f766e','#7c2d12','#6d28d9','#be123c','#111827'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const LKEY='cv_builder_saved',DKEY='cv_builder_draft';
+const CV_LABELS={
+ fr:{name:'Votre nom',profile:'Profil',experience:'Expérience professionnelle',education:'Formation',skills:'Compétences',languages:'Langues',certifications:'Certifications',interests:'Centres d’intérêt',contact:'Contact',madeOn:'Fait le',signature:'Signature',today:'Aujourd’hui',portfolio:'Portfolio',birthdate:'Date de naissance'},
+ en:{name:'Your name',profile:'Profile',experience:'Work Experience',education:'Education',skills:'Skills',languages:'Languages',certifications:'Certifications',interests:'Interests',contact:'Contact',madeOn:'Made on',signature:'Signature',today:'Today',portfolio:'Portfolio',birthdate:'Date of birth'}
+};
+function cvText(d,key){return CV_LABELS[d.language==='en'?'en':'fr'][key]}
 
-const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',birthdate:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signature:'',signatureOn:true,template:'moderne',color:'#1f4e79',font:'auto'});
+const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',birthdate:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signature:'',signatureOn:true,portfolioUrl:'',qrData:'',qrOn:false,language:'fr',template:'moderne',color:'#1f4e79',font:'auto'});
 const SAMPLE=()=>({...EMPTY(),
  personal:{name:'Awa Traoré',title:'Comptable confirmée',email:'awa.traore@exemple.com',phone:'+226 70 00 00 00',city:'Ouagadougou, Burkina Faso',birthdate:'1992-08-15',link:'linkedin.com/in/awa-traore',link2:'',extra:'Permis B'},
  summary:'Comptable avec 6 ans d’expérience en comptabilité générale et en clôture mensuelle dans des structures de 50 à 300 agents. Rigoureuse et à l’aise avec les outils ERP, j’ai réduit les délais de clôture de 20 % et fiabilisé les rapprochements bancaires.',
@@ -454,9 +537,9 @@ let S=EMPTY(),lastPages=1,timer=null;
 function fieldHtml(k,i,[f,label,type,opts],it){
  const v=it[f]??'';const a=`data-l="${k}" data-i="${i}" data-f="${f}"`;let inp;
  if(type==='check')return `<label class="chk field"><input type="checkbox" ${a} ${v?'checked':''}> ${label}</label>`;
- if(type==='area')inp=`<textarea ${a}>${esc(v)}</textarea>`;
+ if(type==='area')inp=`<textarea ${a} lang="fr" spellcheck="true">${esc(v)}</textarea>`;
  else if(type==='select')inp=`<select ${a}>${opts.map(([val,lab])=>`<option value="${esc(val)}" ${val===v?'selected':''}>${esc(lab)}</option>`).join('')}</select>`;
- else inp=`<input type="${type}" ${a} value="${esc(v)}">`;
+ else inp=`<input type="${type}" ${a} lang="fr" spellcheck="true" value="${esc(v)}">`;
  return `<div class="field ${type==='area'?'full':''}"><label>${label}</label>${inp}</div>`;
 }
 function renderList(k){
@@ -474,6 +557,10 @@ function setForm(){
  document.querySelectorAll('[data-k]').forEach(el=>el.value=S[el.dataset.k]??'');
  $('#photoOn').checked=!!S.photoOn;
  $('#signatureOn').checked=S.signatureOn!==false;
+ $('#qrOn').checked=!!S.qrOn;
+ $('#qrUrl').value=S.portfolioUrl||'';
+ renderQrPreview();
+ document.querySelectorAll('[data-p], [data-k]').forEach(el=>{el.lang='fr';el.spellcheck=true});
  setPhotoUi();setSignatureCanvas();renderAllLists();syncDesignUi();refresh(true);
 }
 function syncDesignUi(){
@@ -534,6 +621,7 @@ function onInput(e){
  else if(t.dataset.k){S[t.dataset.k]=t.value;if(t.dataset.k==='color')syncDesignUi();refresh()}
  else if(t.id==='photoOn'){S.photoOn=t.checked;refresh()}
  else if(t.id==='signatureOn'){S.signatureOn=t.checked;refresh()}
+ else if(t.id==='qrOn'){S.qrOn=t.checked;refresh()}
 }
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
@@ -561,8 +649,14 @@ $('#photoFile').addEventListener('change',e=>{
 $('#photoRemove').onclick=()=>{S.photo='';$('#photoFile').value='';setPhotoUi();refresh()};
 
 /* ---------- Utilitaires de rendu ---------- */
-function fm(v){if(!v)return '';const [y,m]=v.split('-');return m?`${MONTHS[+m-1]} ${y}`:y}
-function range(s,e,cur){return [fm(s),cur?'Aujourd’hui':fm(e)].filter(Boolean).join(' – ')}
+function fm(v,language='fr'){
+ if(!v)return '';
+ const [y,m]=v.split('-');
+ if(!m)return y;
+ if(language==='en')return new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric'}).format(new Date(+y,+m-1,1));
+ return `${MONTHS[+m-1]} ${y}`;
+}
+function range(s,e,cur,language='fr'){return [fm(s,language),cur?(language==='en'?'Today':'Aujourd’hui'):fm(e,language)].filter(Boolean).join(' – ')}
 function bullets(t){
  const l=String(t||'').split('\n').map(x=>x.trim().replace(/^[-•*]\s*/,'')).filter(Boolean);
  return l.length?`<ul class="b">${l.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
@@ -570,13 +664,14 @@ function bullets(t){
 function dots(n){n=+n;return n?'●'.repeat(n)+'○'.repeat(5-n):''}
 function mix(h,t){const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;const m=x=>Math.round(x+(255-x)*t);return '#'+[m(r),m(g),m(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function isLight(h){const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)/255>0.65}
-function formatBirthdate(v){
+function formatBirthdate(v,language='fr'){
  if(!v)return '';
  const parts=String(v).split('-');
  if(parts.length!==3)return '';
  const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
  if(Number.isNaN(d.getTime()))return '';
- return `Date de naissance : ${new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(d)}`;
+ const locale=language==='en'?'en-US':'fr-FR';
+ return `${language==='en'?'Date of birth':'Date de naissance'} : ${new Intl.DateTimeFormat(locale,{day:'numeric',month:'long',year:'numeric'}).format(d)}`;
 }
 
 /* ---------- Modèles ---------- */
@@ -697,6 +792,8 @@ p.sum{margin:0}
 .signature-block .signature{margin-top:10px;font-weight:600}
 .signature-block .signature-line{width:180px;height:40px;border-bottom:1px solid #777;margin-top:3px}
 .signature-block .signature-image{display:block;width:220px;height:76px;object-fit:contain;object-position:left bottom;border-bottom:1px solid #777;margin-top:3px}
+.qr-block{margin-top:12px;font-size:8pt;text-align:left;page-break-inside:avoid}
+.qr-block img{display:block;width:82px;height:82px;object-fit:contain}
 .chip{display:inline-block;border:1px solid ${mix(c,.45)};border-radius:12px;padding:2px 9px;margin:0 5px 5px 0;font-size:9.5pt}
 .chip i{font-style:normal;color:${c};font-size:8pt;margin-left:4px}
 .ct{text-align:center;color:#444;font-size:9.5pt;margin-top:6px}
@@ -722,23 +819,29 @@ function certItem(x){return `<div class="item"><b>${esc(x.name)}</b>${x.org?` �
 function textHeader(d,sp,contacts,inContact){
  const p=d.personal,center=sp.head==='center';
  const sep=center?' &nbsp;|&nbsp; ':' &nbsp;·&nbsp; ';
- return `<h1>${esc(p.name||'Votre nom')}</h1>${p.title?`<div class="jt">${esc(p.title)}</div>`:''}${inContact&&contacts.length?`<div class="${center?'ct':'cl'}">${contacts.map(esc).join(sep)}</div>`:''}`;
+ return `<h1>${esc(p.name||cvText(d,'name'))}</h1>${p.title?`<div class="jt">${esc(p.title)}</div>`:''}${inContact&&contacts.length?`<div class="${center?'ct':'cl'}">${contacts.map(esc).join(sep)}</div>`:''}`;
 }
 
 function signatureHtml(d){
  if(d.signatureOn===false)return '';
- const date=new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
- const signature=validSignature(d.signature)?`<img class="signature-image" src="${d.signature}" alt="Signature manuscrite">`:'<div class="signature-line"></div>';
- return `<div class="signature-block"><div>Fait le ${esc(date)}</div><div class="signature">Signature</div>${signature}</div>`;
+ const locale=d.language==='en'?'en-US':'fr-FR';
+ const date=new Intl.DateTimeFormat(locale,{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+ const signature=validSignature(d.signature)?`<img class="signature-image" src="${d.signature}" alt="${d.language==='en'?'Handwritten signature':'Signature manuscrite'}">`:'<div class="signature-line"></div>';
+ return `<div class="signature-block"><div>${cvText(d,'madeOn')} ${esc(date)}</div><div class="signature">${cvText(d,'signature')}</div>${signature}</div>`;
+}
+function validQr(data){return typeof data==='string'&&/^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+={0,2}$/.test(data)}
+function qrHtml(d){
+ if(!d.qrOn||!validQr(d.qrData))return '';
+ return `<div class="qr-block"><img class="cv-qr" src="${d.qrData}" alt="${d.language==='en'?'Portfolio QR code':'QR code vers le portfolio'}"><div>${cvText(d,'portfolio')}</div></div>`;
 }
 
 function buildInner(d){
  const sp=TEMPLATES[d.template]||TEMPLATES.moderne;
  const p=d.personal;
- const birthdate=formatBirthdate(p.birthdate);
+ const birthdate=formatBirthdate(p.birthdate,d.language);
  const contacts=[p.email,p.phone,p.city,birthdate,p.link,p.link2,p.extra].filter(Boolean);
- const exp=d.experiences.filter(x=>x.title||x.company).map(x=>itemHtml(sp,x.title,range(x.start,x.end,x.current),[x.company,x.place].filter(Boolean).map(esc).join(' · '),bullets(x.desc))).join('');
- const edu=d.education.filter(x=>x.degree||x.school).map(x=>itemHtml(sp,x.degree,range(x.start,x.end,false),[x.school,x.place].filter(Boolean).map(esc).join(' · '),x.desc?`<div class="dim">${esc(x.desc).replace(/\n/g,'<br>')}</div>`:'')).join('');
+ const exp=d.experiences.filter(x=>x.title||x.company).map(x=>itemHtml(sp,x.title,range(x.start,x.end,x.current,d.language),[x.company,x.place].filter(Boolean).map(esc).join(' · '),bullets(x.desc))).join('');
+ const edu=d.education.filter(x=>x.degree||x.school).map(x=>itemHtml(sp,x.degree,range(x.start,x.end,false,d.language),[x.school,x.place].filter(Boolean).map(esc).join(' · '),x.desc?`<div class="dim">${esc(x.desc).replace(/\n/g,'<br>')}</div>`:'')).join('');
  const certs=d.certs.filter(x=>x.name).map(certItem).join('');
  const skills=d.skills.filter(x=>x.name),langs=d.languages.filter(x=>x.name);
  const sumHtml=d.summary.trim()?`<p class="sum">${esc(d.summary.trim()).replace(/\n/g,'<br>')}</p>`:'';
@@ -748,13 +851,13 @@ function buildInner(d){
  if(sp.layout==='side'){
   const side=
    (photo?`<img src="${photo}" alt="">`:'')+
-   (contacts.length?`<h3>Contact</h3>${contacts.map(x=>`<div>${esc(x)}</div>`).join('')}`:'')+
-   (skills.length?`<h3>Compétences</h3>${skills.map(x=>`<div>${esc(x.name)}${x.level?`<span class="dots">${dots(x.level)}</span>`:''}</div>`).join('')}`:'')+
-   (langs.length?`<h3>Langues</h3>${langs.map(x=>`<div><b>${esc(x.name)}</b>${x.level?`<br>${esc(x.level)}`:''}</div>`).join('')}`:'')+
-   (interests?`<h3>Centres d’intérêt</h3><div>${esc(interests).replace(/\n/g,'<br>')}</div>`:'');
+   (contacts.length?`<h3>${cvText(d,'contact')}</h3>${contacts.map(x=>`<div>${esc(x)}</div>`).join('')}`:'')+
+   (skills.length?`<h3>${cvText(d,'skills')}</h3>${skills.map(x=>`<div>${esc(x.name)}${x.level?`<span class="dots">${dots(x.level)}</span>`:''}</div>`).join('')}`:'')+
+   (langs.length?`<h3>${cvText(d,'languages')}</h3>${langs.map(x=>`<div><b>${esc(x.name)}</b>${x.level?`<br>${esc(x.level)}`:''}</div>`).join('')}`:'')+
+   (interests?`<h3>${cvText(d,'interests')}</h3><div>${esc(interests).replace(/\n/g,'<br>')}</div>`:'');
   const txt=textHeader(d,sp,contacts,false);
   const head=sp.head==='box'?`<div class="hd-box">${txt}</div>`:`<div class="hd-plain">${txt}</div>`;
-  const main=head+sec('Profil',sumHtml)+sec('Expérience professionnelle',exp)+sec('Formation',edu)+sec('Certifications',certs)+signatureHtml(d);
+  const main=head+sec(cvText(d,'profile'),sumHtml)+sec(cvText(d,'experience'),exp)+sec(cvText(d,'education'),edu)+sec(cvText(d,'certifications'),certs)+signatureHtml(d)+qrHtml(d);
   const left=sp.side!=='right';
   const cells=(a,b)=>left?a+b:b+a;
   const spc=cells('<td class="side sp"></td>','<td class="msp"></td>');
@@ -773,12 +876,13 @@ function buildInner(d){
   ?`<p class="sum">${langs.map(x=>esc(x.name)+(x.level?` (${esc(x.level)})`:'')).join(' · ')}</p>`
   :langs.map(x=>`<span class="chip">${esc(x.name)}${x.level?` — ${esc(x.level)}`:''}</span>`).join('')):'';
  const intHtml=interests?`<p class="sum">${esc(interests).replace(/\n/g,'<br>')}</p>`:'';
- return header+sec('Profil',sumHtml)+sec('Expérience professionnelle',exp)+sec('Formation',edu)+sec('Compétences',skHtml)+sec('Langues',lgHtml)+sec('Certifications',certs)+sec('Centres d’intérêt',intHtml)+signatureHtml(d);
+ return header+sec(cvText(d,'profile'),sumHtml)+sec(cvText(d,'experience'),exp)+sec(cvText(d,'education'),edu)+sec(cvText(d,'skills'),skHtml)+sec(cvText(d,'languages'),lgHtml)+sec(cvText(d,'certifications'),certs)+sec(cvText(d,'interests'),intHtml)+signatureHtml(d)+qrHtml(d);
 }
 function buildDoc(d,mode){
  const inner=buildInner(d);
  const body=mode==='word'?`<div class="Section1">${inner}</div>`:inner;
- return `<!DOCTYPE html><html lang="fr" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>CV – ${esc(d.personal.name||'sans nom')}</title><style>${css(d,mode)}</style></head><body>${body}</body></html>`;
+ const language=d.language==='en'?'en':'fr';
+ return `<!DOCTYPE html><html lang="${language}" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${language==='en'?'Resume':'CV'} – ${esc(d.personal.name||cvText(d,'name'))}</title><style>${css(d,mode)}</style></head><body>${body}</body></html>`;
 }
 
 /* ---------- Aperçu ---------- */
@@ -845,6 +949,147 @@ function exportWord(){
  download(blob,`CV_${safeName(S.personal.name)}.doc`);
  status('CV Word téléchargé. Si la photo n’apparaît pas dans Word, utilisez l’export PDF.','ok');
 }
+function exportEnglishWord(){
+ if(!S.personal.name.trim()){status('Renseignez au moins votre nom avant l’export.','error');return}
+ const copy={...S,language:'en'};
+ const blob=new Blob(['\ufeff',buildDoc(copy,'word')],{type:'application/msword'});
+ download(blob,`CV_${safeName(S.personal.name)}_EN.doc`);
+ status('Copie anglaise téléchargée. Les textes personnels sont conservés et peuvent être traduits dans Word.','ok');
+}
+const ATS_STOP_WORDS=new Set(('about above after again against all also am an and any are as at be because been before being below between both but by can could did do does doing down during each few for from further had has have having he her here hers herself him himself his how i if in into is it its itself just me more most my myself no nor not of off on once only or other our ours ourselves out over own same she should so some such than that the their theirs them themselves then there these they this those through to too under until up very was we were what when where which while who whom why will with would you your yours yourself yourselves a au aux avec ce ces dans de des du elle en et eux il je la le les leur lui ma mais me même mes moi mon ne nos notre nous on ou par pas pour qu que qui sa se ses son sur ta te tes ton tu un une vos votre vous y afin ainsi alors assez aucun aucune aussi autre autres car comme comment d abord davantage dedans dehors depuis devant donc encore entre envers est être faire fois lors lorsque non parce peu plus plusieurs premier puis sans sera si soi sont sous souvent tous tout très trop vers via').split(' ').map(normalizeTerm));
+function normalizeTerm(value){
+ return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function termCounts(value){
+ const terms=normalizeTerm(value).match(/[a-z][a-z0-9+#.-]{2,}/g)||[];
+ const counts=new Map();
+ terms.forEach(term=>{if(!ATS_STOP_WORDS.has(term))counts.set(term,(counts.get(term)||0)+1)});
+ return counts;
+}
+function analyzeOffer(){
+ const offer=$('#atsOffer').value.trim();
+ if(offer.length<30){status('Collez une offre d’emploi suffisamment détaillée (au moins 30 caractères).','error');return}
+ const offerTerms=termCounts(offer);
+ const keywords=[...offerTerms.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,20).map(([term])=>term);
+ if(!keywords.length){status('Aucun mot-clé exploitable trouvé dans cette offre.','error');return}
+ const cvText=[
+  S.personal.title,S.personal.extra,S.summary,S.interests,
+  ...S.experiences.flatMap(x=>[x.title,x.company,x.place,x.desc]),
+  ...S.education.flatMap(x=>[x.degree,x.school,x.place,x.desc]),
+  ...S.skills.map(x=>x.name),...S.languages.map(x=>[x.name,x.level].join(' ')),
+  ...S.certs.flatMap(x=>[x.name,x.org])
+ ].join(' ');
+ const cvTerms=termCounts(cvText),matched=keywords.filter(x=>cvTerms.has(x)),missing=keywords.filter(x=>!cvTerms.has(x));
+ const score=Math.round(matched.length/keywords.length*100);
+ const list=items=>items.length?`<ul class="result-list">${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p>Aucun mot-clé.</p>';
+ $('#atsResults').innerHTML=`<p class="score">${score}% des principaux mots-clés repérés (${matched.length}/${keywords.length})</p><p><strong>Présents dans votre CV</strong>${list(matched)}<strong>À vérifier ou à ajouter si cela reflète réellement votre expérience</strong>${list(missing)}</p><p class="hint">Indicateur local basé sur des mots exacts, pas une note officielle de logiciel ATS. Les textes de l’offre ne sont pas enregistrés.</p>`;
+}
+function proofEntries(){
+ const fields=[];
+ const add=(path,label,value)=>fields.push({path,label,value:value||''});
+ [['name','Nom'],['title','Titre visé'],['extra','Information complémentaire']].forEach(([key,label])=>add(`personal:${key}`,label,S.personal[key]));
+ add('root:summary','Profil',S.summary);
+ S.experiences.forEach((x,i)=>[['title','Poste'],['company','Entreprise'],['place','Lieu'],['desc','Missions et réalisations']].forEach(([key,label])=>add(`experiences:${i}:${key}`,`${label} — expérience ${i+1}`,x[key])));
+ S.education.forEach((x,i)=>[['degree','Diplôme'],['school','Établissement'],['place','Lieu'],['desc','Détails']].forEach(([key,label])=>add(`education:${i}:${key}`,`${label} — formation ${i+1}`,x[key])));
+ S.skills.forEach((x,i)=>add(`skills:${i}:name`,`Compétence ${i+1}`,x.name));
+ S.languages.forEach((x,i)=>add(`languages:${i}:name`,`Langue ${i+1}`,x.name));
+ S.certs.forEach((x,i)=>[['name','Certification'],['org','Organisme']].forEach(([key,label])=>add(`certs:${i}:${key}`,`${label} — certification ${i+1}`,x[key])));
+ add('root:interests','Centres d’intérêt',S.interests);
+ return fields;
+}
+function renderProof(){
+ const fields=proofEntries();
+ const issues=[];
+ fields.forEach(x=>{
+  if(/ {2,}/.test(x.value))issues.push(`${x.label} : espaces consécutifs.`);
+  if(/(?:^|[^\p{L}])([\p{L}]{3,})\s+\1(?:$|[^\p{L}])/iu.test(x.value))issues.push(`${x.label} : mot répété.`);
+ });
+ $('#proofIssues').innerHTML=issues.length?`<p><strong>Vérifications automatiques :</strong></p><ul class="result-list">${issues.map(esc).map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p>Aucune répétition ou série d’espaces détectée.</p>';
+ $('#proofFields').innerHTML=fields.map(x=>`<div class="field proof-field"><label>${esc(x.label)}</label><textarea data-proof-path="${esc(x.path)}" lang="fr" spellcheck="true">${esc(x.value)}</textarea></div>`).join('');
+}
+function applyProof(){
+ document.querySelectorAll('[data-proof-path]').forEach(el=>{
+  const [group,index,field]=el.dataset.proofPath.split(':');
+  if(group==='personal')S.personal[index]=el.value;
+  else if(group==='root')S[index]=el.value;
+  else if(S[group]&&S[group][+index])S[group][+index][field]=el.value;
+ });
+ setForm();$('#proofModal').classList.remove('show');status('Modifications de relecture appliquées au CV.','ok');
+}
+function generateLetter(){
+ const name=S.personal.name.trim();
+ if(!name){status('Renseignez votre nom avant de créer la lettre.','error');return}
+ const position=$('#letterPosition').value.trim()||S.personal.title.trim();
+ const company=$('#letterCompany').value.trim();
+ const offerNotes=$('#letterDescription').value.trim();
+ const experience=S.experiences.find(x=>x.title||x.company);
+ const skills=S.skills.filter(x=>x.name).slice(0,4).map(x=>x.name);
+ const lines=[
+  `Objet : Candidature${position?` au poste de ${position}`:''}${company?` — ${company}`:''}`,
+  'Madame, Monsieur,',
+  `Je vous adresse ma candidature${position?` pour le poste de ${position}`:''}${company?` au sein de ${company}`:''}.`
+ ];
+ if(S.summary.trim())lines.push(S.summary.trim());
+ if(experience){
+  const role=[experience.title,experience.company?`chez ${experience.company}`:''].filter(Boolean).join(' ');
+  const detail=String(experience.desc||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,2).join('; ');
+  lines.push(`Mon expérience de ${role}${detail?` m’a notamment permis de : ${detail}`:'.'}`);
+ }
+ if(skills.length)lines.push(`Je souhaite également mettre à profit mes compétences en ${skills.join(', ')}.`);
+ if(offerNotes)lines.push(`Les éléments du poste que je souhaite particulièrement aborder lors d’un échange sont : ${offerNotes}`);
+ lines.push('Je souhaiterais vous présenter plus en détail mon parcours et ma motivation lors d’un entretien.');
+ lines.push('Je vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées.',name);
+ $('#letterText').value=lines.join('\n\n');
+}
+function downloadLetter(){
+ const content=$('#letterText').value.trim();
+ if(!content){status('Générez ou saisissez le contenu de la lettre avant le téléchargement.','error');return}
+ const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Lettre de motivation</title><style>body{font:11pt/1.6 Calibri,Arial,sans-serif;margin:2.5cm}p{margin:0 0 12pt}</style></head><body>${content.split('\n').map(line=>line?`<p>${esc(line)}</p>`:'<p>&nbsp;</p>').join('')}</body></html>`;
+ download(new Blob(['\ufeff',html],{type:'application/msword'}),`Lettre_${safeName(S.personal.name)}.doc`);
+ status('Lettre Word téléchargée.','ok');
+}
+function validPortfolioUrl(value){
+ try{const url=new URL(value);return (url.protocol==='http:'||url.protocol==='https:')&&!!url.hostname&&!url.username&&!url.password}
+ catch(e){return false}
+}
+function createQrData(value){
+ const url=new URL(value).href;
+ const qr=qrcode(0,'M');
+ qr.addData(url,'Byte');qr.make();
+ return `data:image/svg+xml;base64,${btoa(qr.createSvgTag({cellSize:4,margin:4,scalable:true}))}`;
+}
+function renderQrPreview(){
+ const data=validQr(S.qrData)?S.qrData:'';
+ $('#qrPreview').innerHTML=data?`<img src="${data}" alt="Aperçu du QR code">`:'Le QR code apparaîtra ici.';
+}
+function generateQr(){
+ const input=$('#qrUrl').value.trim();
+ if(!validPortfolioUrl(input)){status('Saisissez une adresse complète commençant par http:// ou https://.','error');return}
+ try{
+  S.portfolioUrl=new URL(input).href;S.qrData=createQrData(S.portfolioUrl);S.qrOn=true;
+  $('#qrOn').checked=true;renderQrPreview();refresh();status('QR code ajouté au CV.','ok');
+ }catch(e){status('Impossible de générer le QR code. Vérifiez que l’adresse n’est pas trop longue.','error')}
+}
+$('#atsBtn').onclick=()=>{$('#atsResults').innerHTML='';$('#atsOffer').value='';$('#atsModal').classList.add('show')};
+$('#atsAnalyze').onclick=analyzeOffer;
+$('#letterBtn').onclick=()=>{$('#letterPosition').value=S.personal.title||'';$('#letterCompany').value='';$('#letterDescription').value='';$('#letterText').value='';generateLetter();$('#letterModal').classList.add('show')};
+$('#letterGenerate').onclick=generateLetter;
+$('#letterCopy').onclick=async()=>{
+ const content=$('#letterText').value.trim();
+ if(!content){status('Aucun texte à copier.','error');return}
+ try{await navigator.clipboard.writeText(content);status('Lettre copiée dans le presse-papiers.','ok')}
+ catch(e){status('Copie impossible. Autorisez le presse-papiers ou copiez le texte manuellement.','error')}
+};
+$('#letterDownload').onclick=downloadLetter;
+$('#proofBtn').onclick=()=>{renderProof();$('#proofModal').classList.add('show')};
+$('#proofApply').onclick=applyProof;
+$('#qrBtn').onclick=()=>{$('#qrUrl').value=S.portfolioUrl||S.personal.link||'';$('#qrOn').checked=!!S.qrOn;renderQrPreview();$('#qrModal').classList.add('show')};
+$('#qrGenerate').onclick=generateQr;
+$('#qrRemove').onclick=()=>{
+ S.portfolioUrl='';S.qrData='';S.qrOn=false;$('#qrUrl').value='';$('#qrOn').checked=false;renderQrPreview();refresh();status('QR code retiré du CV.','ok');
+};
+$('#englishBtn').onclick=exportEnglishWord;
+document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$('#'+button.dataset.close).classList.remove('show')));
 $('#pdfBtn').onclick=exportPdf;
 $('#wordBtn').onclick=exportWord;
 
