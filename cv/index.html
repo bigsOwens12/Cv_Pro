@@ -56,6 +56,7 @@ input[type=color]{padding:2px;height:38px;width:60px}
 .swatches{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .sw{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid #fff;box-shadow:0 0 0 1px #94a3b8}
 .sw.on{box-shadow:0 0 0 3px var(--navy)}
+#signatureCanvas{display:block;width:100%;height:auto;border:1px dashed #94a3b8;border-radius:8px;background:#fff;touch-action:none;cursor:crosshair}
 .photoline{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 #photoPrev{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--line);display:none}
 .previewcol{position:sticky;top:10px}
@@ -234,6 +235,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
         </div>
       </details>
 
+      <details class="sec">
+        <summary>Signature manuscrite</summary>
+        <div class="secbody">
+          <label for="signatureCanvas">Dessinez votre signature</label>
+          <canvas id="signatureCanvas" width="700" height="160" aria-label="Zone de dessin de la signature"></canvas>
+          <div style="margin-top:8px"><button type="button" class="secondary" id="signatureClear">Effacer la signature</button></div>
+          <p class="hint">Utilisez la souris, le doigt ou un stylet. La signature sera insérée dans le CV si l’option « Avec date et signature » est activée.</p>
+        </div>
+      </details>
+
       <details class="sec" open>
         <summary>1. Identité et contact</summary>
         <div class="secbody">
@@ -404,7 +415,7 @@ const COLORS=['#1f4e79','#0f766e','#7c2d12','#6d28d9','#be123c','#111827'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const LKEY='cv_builder_saved',DKEY='cv_builder_draft';
 
-const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',birthdate:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signatureOn:true,template:'moderne',color:'#1f4e79',font:'auto'});
+const EMPTY=()=>({id:null,personal:{name:'',title:'',email:'',phone:'',city:'',birthdate:'',link:'',link2:'',extra:''},summary:'',experiences:[],education:[],skills:[],languages:[],certs:[],interests:'',photo:'',photoOn:true,signature:'',signatureOn:true,template:'moderne',color:'#1f4e79',font:'auto'});
 const SAMPLE=()=>({...EMPTY(),
  personal:{name:'Awa Traoré',title:'Comptable confirmée',email:'awa.traore@exemple.com',phone:'+226 70 00 00 00',city:'Ouagadougou, Burkina Faso',birthdate:'1992-08-15',link:'linkedin.com/in/awa-traore',link2:'',extra:'Permis B'},
  summary:'Comptable avec 6 ans d’expérience en comptabilité générale et en clôture mensuelle dans des structures de 50 à 300 agents. Rigoureuse et à l’aise avec les outils ERP, j’ai réduit les délais de clôture de 20 % et fiabilisé les rapprochements bancaires.',
@@ -463,7 +474,7 @@ function setForm(){
  document.querySelectorAll('[data-k]').forEach(el=>el.value=S[el.dataset.k]??'');
  $('#photoOn').checked=!!S.photoOn;
  $('#signatureOn').checked=S.signatureOn!==false;
- setPhotoUi();renderAllLists();syncDesignUi();refresh(true);
+ setPhotoUi();setSignatureCanvas();renderAllLists();syncDesignUi();refresh(true);
 }
 function syncDesignUi(){
  renderGallery();
@@ -475,6 +486,39 @@ function setPhotoUi(){
  if(S.photo){p.src=S.photo;p.style.display='block';$('#photoRemove').style.display='inline-block'}
  else{p.removeAttribute('src');p.style.display='none';$('#photoRemove').style.display='none'}
 }
+const signatureCanvas=$('#signatureCanvas');
+const signatureContext=signatureCanvas.getContext('2d');
+function validSignature(data){return typeof data==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(data)}
+function setSignatureCanvas(){
+ signatureContext.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);
+ if(!validSignature(S.signature))return;
+ const image=new Image();
+ image.onload=()=>{if(S.signature===image.src)signatureContext.drawImage(image,0,0,signatureCanvas.width,signatureCanvas.height)};
+ image.src=S.signature;
+}
+let signatureDrawing=false;
+function signaturePoint(e){
+ const rect=signatureCanvas.getBoundingClientRect();
+ return {x:(e.clientX-rect.left)*signatureCanvas.width/rect.width,y:(e.clientY-rect.top)*signatureCanvas.height/rect.height};
+}
+signatureCanvas.addEventListener('pointerdown',e=>{
+ e.preventDefault();signatureDrawing=true;signatureCanvas.setPointerCapture(e.pointerId);
+ const p=signaturePoint(e);signatureContext.beginPath();signatureContext.arc(p.x,p.y,1.5,0,Math.PI*2);signatureContext.fillStyle='#172b4d';signatureContext.fill();
+ signatureContext.beginPath();signatureContext.moveTo(p.x,p.y);
+});
+signatureCanvas.addEventListener('pointermove',e=>{
+ if(!signatureDrawing)return;
+ const p=signaturePoint(e);signatureContext.lineTo(p.x,p.y);signatureContext.strokeStyle='#172b4d';signatureContext.lineWidth=3;signatureContext.lineCap='round';signatureContext.lineJoin='round';signatureContext.stroke();
+});
+function finishSignature(){
+ if(!signatureDrawing)return;
+ signatureDrawing=false;S.signature=signatureCanvas.toDataURL('image/png');refresh();status('Signature manuscrite enregistrée.','ok');
+}
+signatureCanvas.addEventListener('pointerup',finishSignature);
+signatureCanvas.addEventListener('pointercancel',finishSignature);
+$('#signatureClear').addEventListener('click',()=>{
+ signatureContext.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);S.signature='';refresh();status('Signature effacée.','ok');
+});
 $('#swatches').innerHTML=COLORS.map(c=>`<button type="button" class="sw" data-color="${c}" style="background:${c}" title="${c}"></button>`).join('');
 
 document.addEventListener('input',onInput);
@@ -651,7 +695,8 @@ ul.b{margin:3px 0 0 16px;padding:0}ul.b li{margin:0 0 2px}
 p.sum{margin:0}
 .signature-block{width:100%;margin-top:32px;page-break-inside:avoid}
 .signature-block .signature{margin-top:10px;font-weight:600}
-.signature-block .signature span{display:inline-block;width:180px;border-bottom:1px solid #777;margin-left:8px}
+.signature-block .signature-line{width:180px;height:40px;border-bottom:1px solid #777;margin-top:3px}
+.signature-block .signature-image{display:block;width:220px;height:76px;object-fit:contain;object-position:left bottom;border-bottom:1px solid #777;margin-top:3px}
 .chip{display:inline-block;border:1px solid ${mix(c,.45)};border-radius:12px;padding:2px 9px;margin:0 5px 5px 0;font-size:9.5pt}
 .chip i{font-style:normal;color:${c};font-size:8pt;margin-left:4px}
 .ct{text-align:center;color:#444;font-size:9.5pt;margin-top:6px}
@@ -683,7 +728,8 @@ function textHeader(d,sp,contacts,inContact){
 function signatureHtml(d){
  if(d.signatureOn===false)return '';
  const date=new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
- return `<div class="signature-block"><div>Fait le ${esc(date)}</div><div class="signature">Signature<span></span></div></div>`;
+ const signature=validSignature(d.signature)?`<img class="signature-image" src="${d.signature}" alt="Signature manuscrite">`:'<div class="signature-line"></div>';
+ return `<div class="signature-block"><div>Fait le ${esc(date)}</div><div class="signature">Signature</div>${signature}</div>`;
 }
 
 function buildInner(d){
